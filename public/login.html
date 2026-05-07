@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FileVault - Login</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>FileVault</h1>
+        <p>Sign in to your account</p>
+      </div>
+
+      <div id="error-msg" class="error-banner hidden"></div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="email@example.com" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" />
+      </div>
+      <button id="login-btn" class="btn-primary">Sign In</button>
+    </div>
+
+    <script>
+      document
+        .getElementById("login-btn")
+        .addEventListener("click", async () => {
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value;
+          const errorDiv = document.getElementById("error-msg");
+
+          try {
+            const res = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+              window.location.href = "/dashboard.html";
+            } else {
+              errorDiv.textContent = data.error;
+              errorDiv.classList.remove("hidden");
+            }
+          } catch (err) {
+            errorDiv.textContent = "Network error. Please try again.";
+            errorDiv.classList.remove("hidden");
+          }
+        });
+    </script>
+  </body>
+</html>

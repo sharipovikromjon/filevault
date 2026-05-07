@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FileVault - Upload</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="app-page">
+    <nav class="navbar">
+      <span class="brand">FileVault</span>
+      <div class="nav-links">
+        <a href="dashboard.html">Dashboard</a>
+        <button id="logout-btn" class="btn-ghost">Logout</button>
+      </div>
+    </nav>
+
+    <main class="container">
+      <h2>Upload File</h2>
+
+      <div class="upload-box" id="drop-zone">
+        <p>
+          Drop files here or
+          <label for="file-input" class="link-text">browse</label>
+        </p>
+        <p class="hint">Max 500 MB per file · Versions kept automatically</p>
+        <input type="file" id="file-input" hidden />
+      </div>
+
+      <div class="form-group" style="margin-top: 1rem">
+        <label for="description">Description (optional)</label>
+        <input
+          type="text"
+          id="description"
+          placeholder="Add a note about this file..."
+        />
+      </div>
+
+      <div id="progress-area" class="hidden">
+        <p id="progress-label">Uploading...</p>
+        <progress id="progress-bar" value="0" max="100"></progress>
+      </div>
+
+      <div id="upload-result" class="hidden"></div>
+
+      <button id="upload-btn" class="btn-primary" style="margin-top: 1rem">
+        Upload
+      </button>
+    </main>
+
+    <script>
+      let selectedFile = null;
+
+      document.getElementById("file-input").addEventListener("change", (e) => {
+        selectedFile = e.target.files[0];
+        if (selectedFile) {
+          document.getElementById("drop-zone").querySelector("p").textContent =
+            `Selected: ${selectedFile.name}`;
+        }
+      });
+
+      document
+        .getElementById("upload-btn")
+        .addEventListener("click", async () => {
+          if (!selectedFile) {
+            alert("Please select a file first.");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("file", selectedFile);
+          formData.append(
+            "description",
+            document.getElementById("description").value,
+          );
+
+          document.getElementById("progress-area").classList.remove("hidden");
+          const resultDiv = document.getElementById("upload-result");
+
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+              const pct = Math.round((e.loaded / e.total) * 100);
+              document.getElementById("progress-bar").value = pct;
+              document.getElementById("progress-label").textContent =
+                `Uploading - ${pct}%`;
+            }
+          });
+
+          xhr.addEventListener("load", () => {
+            const data = JSON.parse(xhr.responseText);
+            if (xhr.status === 201) {
+              resultDiv.textContent = `Uploaded successfully: ${data.file.filename}`;
+              resultDiv.className = "success-banner";
+              setTimeout(
+                () => (window.location.href = "/dashboard.html"),
+                2000,
+              );
+            } else {
+              resultDiv.textContent = `Error: ${data.error}`;
+              resultDiv.className = "error-banner";
+            }
+            resultDiv.classList.remove("hidden");
+          });
+
+          xhr.open("POST", "/api/files/upload");
+          xhr.send(formData);
+        });
+
+      document
+        .getElementById("logout-btn")
+        .addEventListener("click", async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          window.location.href = "/";
+        });
+    </script>
+  </body>
+</html>
